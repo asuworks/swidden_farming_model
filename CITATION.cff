@@ -1,0 +1,46 @@
+abstract: "This model simulates some of the dynamics of household level swidden agriculture\
+  \ (also called shifting cultivation or slash-and-burn agriculture). The model can\
+  \ run in controlled or adaptive mode. In controlled mode, the user sets values related\
+  \ to farming decisions. In adaptive mode, these values are set by the agents. \r\
+  \n\r\nThe model is designed to explore some of the factors affecting swidden (sometimes\
+  \ called slash-and-burn) agriculture. Agricultural households take control of the\
+  \ land around them and rotate agricultural fields within this area. Field fertility\
+  \ decreases if a patch is used, and the patch or patches with the highest potential\
+  \ net return is chosen to farm during each time step. The model explores the importance\
+  \ of soil fertility upon swidden strategies as well as issues of land ownership.\
+  \ In addition, the model also explores the effects of swidden agriculture on vegetation\
+  \ communities. \r\n\r\nn controlled mode, the researcher sets all parameter values.\
+  \ In adaptive mode, the model explores the success (or failure) of strategies created\
+  \ randomly at the model\u2019s initialization, and during agent reproduction. The\
+  \ agricultural strategy of the agents results from the combination of six key values\
+  \ (move-dist, move-threshold, fission-rate farm-dist, & min-fertility). These values\
+  \ are all initialized with random values from within specified ranges. If an agent\
+  \ reproduces, a copy of the agent is created; however, any of the six key values\
+  \ may randomly change. The resulting selection will produce a set of agents with\
+  \ decision rule values that out compete all other agents."
+authors:
+- affiliation: Arizona State University, School of Human Evolution & Social Change
+    and School of Complex Adaptive Systems
+  email: michael.barton@asu.edu
+  family-names: Barton
+  given-names: C Michael
+  orcid: https://orcid.org/0000-0003-2561-1927
+cff-version: 1.2.0
+date-released: '2013-06-12'
+identifiers:
+- type: url
+  value: https://staging.comses.net/codebases/3826/releases/1.0.0/
+keywords:
+- agriculture
+- farms
+- genetic algorithm
+- innovation
+- land-use
+- socioecological systems
+- swidden
+license: GPL-2.0
+message: If you use this software, please cite it using the metadata from this file.
+title: Swidden Farming Version 2.0
+type: software
+url: https://staging.comses.net/codebases/3826/releases/1.0.0/
+version: 1.0.0
