@@ -1,6 +1,6 @@
 {
-  "@id": "https://staging.comses.net/codebases/3826/releases/1.0.0/",
-  "url": "https://staging.comses.net/codebases/3826/releases/1.0.0/",
+  "@id": "https://doi.org/10.82853/tymv-as41",
+  "url": "https://doi.org/10.82853/tymv-as41",
   "name": "Swidden Farming Version 2.0",
   "@type": "SoftwareSourceCode",
   "author": [
@@ -29,7 +29,7 @@
     "name": "GPL-2.0",
     "@type": "CreativeWork"
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "@context": "https://w3id.org/codemeta/3.0",
   "keywords": [
     "agriculture",
@@ -46,14 +46,17 @@
     "name": "CoMSES Net",
     "@type": "Organization"
   },
-  "identifier": "https://staging.comses.net/codebases/3826/releases/1.0.0/",
-  "dateCreated": "2013-06-12",
+  "identifier": [
+    "10.82853/tymv-as41",
+    "https://doi.org/10.82853/tymv-as41"
+  ],
+  "dateCreated": "2013-06-13",
   "description": "This model simulates some of the dynamics of household level swidden agriculture (also called shifting cultivation or slash-and-burn agriculture). The model can run in controlled or adaptive mode. In controlled mode, the user sets values related to farming decisions. In adaptive mode, these values are set by the agents. \r\n\r\nThe model is designed to explore some of the factors affecting swidden (sometimes called slash-and-burn) agriculture. Agricultural households take control of the land around them and rotate agricultural fields within this area. Field fertility decreases if a patch is used, and the patch or patches with the highest potential net return is chosen to farm during each time step. The model explores the importance of soil fertility upon swidden strategies as well as issues of land ownership. In addition, the model also explores the effects of swidden agriculture on vegetation communities. \r\n\r\nn controlled mode, the researcher sets all parameter values. In adaptive mode, the model explores the success (or failure) of strategies created randomly at the model\u2019s initialization, and during agent reproduction. The agricultural strategy of the agents results from the combination of six key values (move-dist, move-threshold, fission-rate farm-dist, & min-fertility). These values are all initialized with random values from within specified ranges. If an agent reproduces, a copy of the agent is created; however, any of the six key values may randomly change. The resulting selection will produce a set of agents with decision rule values that out compete all other agents.",
-  "downloadUrl": "https://staging.comses.net/codebases/3826/releases/1.0.0/download/",
-  "dateModified": "2018-02-18",
+  "downloadUrl": "https://staging.comses.net/codebases/3826/releases/1.1.0/download/",
+  "dateModified": "2024-11-14",
   "releaseNotes": "",
   "copyrightYear": 2013,
-  "datePublished": "2013-06-12",
+  "datePublished": "2013-06-13",
   "operatingSystem": "platform_independent",
   "runtimePlatform": [
     "NetLogo"
