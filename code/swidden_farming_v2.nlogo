@@ -1,3 +1,6 @@
+;; Swidden Farming v. 2
+;; *********************
+
 breed [households household]
 households-own [energy move-threshold net-return move-dist farm-dist fission-rate min-fertility]
 
@@ -9,12 +12,15 @@ globals [xval yval init-energy divisor cum_bad-years check max_veg
          restore-rate ]
 
 to setup
+  ;; general initialization
   clear-all
-  set init-energy 100
-  set max_veg 50
+  set init-energy 100 ;; default setting
+  set max_veg 50 ;; represents tree cover - 0=bare land
   set-default-shape households "house"
   set cum_bad-years 0
   set divisor 1
+  
+  ;; initialize floating point variables from percentages of GUI controls
   set move-rate init-move-threshold / 100
   set harvest-rate harvest / 100
   set farm-rate farm-cost / 100
@@ -22,6 +28,8 @@ to setup
   set move-cost-rate move-cost / 100
   set fertility-loss-rate fertility-loss / 100
   set restore-rate fertility-restore / 100
+  
+  ;; initialize agents
   setup-patches
   setup-households
   reset-ticks
@@ -29,24 +37,27 @@ end
 
 to setup-patches
   ask patches [ 
-    set vegetation 50
-    set pcolor 62  
-    set field 0
-    set fertility 1 
-    set owner -1
-    set fallow 0
-    set state "unused"
-    set site FALSE
-    set farmstead 0
+    set vegetation 50 ;; start with everything forest
+    set pcolor 62 
+    set field 0 ;; no fields to start with
+    set fertility 1 ;; max fertility for all lands
+    set owner -1 ;; no patches owned
+    set fallow 0 ;; nothing fallowed
+    set state "unused" ;; all patches initially unused
+    set site FALSE ;; no sites to start with
+    set farmstead 0 ;; no farmsteads to start with
     set veg-clear-cost init-energy * clearing-rate
     ]
 end
 
 to setup-households
+  ;; household agents are turtles
   create-households init-households [
     set size 2
     set energy init-energy
+    
     ifelse adaptive [
+      ;; initialize household decision parameters randomly for adaptive mode
       set move-dist (random 4) + 1   ;; jump distance
       set move-rate random-float 1  ;; move threshhold
       set fission-rate 1 + random-float 1 ;; fission energy
@@ -54,22 +65,23 @@ to setup-households
       set min-fertility random-float 1  ;; minimum fertility acceptable for farming
 ;      set n_patches (random 4) + 1  ;; number of patches to farm
     ][
+      ;; in control mode, decision parameters are set by user
       set color red
       set fission-rate fission-energy / 100
       set farm-dist swidden-radius
-      set move-threshold init-energy * move-rate ; calculate move threshold from % value set by user    
-      set min-fertility 0.8
+      set move-threshold init-energy * move-rate ;; calculate move threshold from % value set by user    
+      set min-fertility 0.8 ;; minimum acceptable fertility in a patch to farm it
     ]
 
-    move-to one-of patches
-    let hh-num who
+    move-to one-of patches ;; place household agents randomly in world
+    let hh-num who ;; give them an ID number to keep track of the land they own
         
     ask patch-here [ 
-      ;; build a farmstead but you can't farm here
+      ;; make the location of each agent a farmstead (can't be farmed)
       set pcolor red 
       set farmstead farmstead + 1 
-      set state "active"
-      set fertility 0
+      set state "active" ;; patch is now in use by household agent
+      set fertility 0 ;; farmstead itself cannot be farmed
     ] 
     ask other patches in-radius farm-dist with [owner = -1] [
       ;; household takes ownership of unowned patches in area around farmstead
@@ -82,27 +94,28 @@ to setup-households
 end
 
 to go  
+  ;; main simulation procedure
   if max_cycles > 0 and ticks >= max_cycles [ stop ] ; stop the simulation if preset tick limit
   ifelse bad-years != 0 and random 100 <= bad-years ; determine if it is a "bad year" and cut harvest in half
     [set divisor 2
     set cum_bad-years cum_bad-years + 1]
     [set divisor 1]
     
-  ifelse show-info = "none" ; show household energy switch
-    [ ask households [set label ""] ask patches [set plabel ""] ]
-    [ ifelse show-info = "energy" 
-      [ask households [set label round energy] ask patches [set plabel ""]] 
-      [ask patches [set plabel owner] ask households [set label who]]
-    ]
+  ;; optional labeling of agents  
+  ifelse show-info = "none"
+    [ ask households [set label ""] ask patches [set plabel ""] ] ;; no labels for households or patches
+    [ ifelse show-info = "energy"
+      [ask households [set label round energy] ask patches [set plabel ""]] ;; label households with their energy level
+      [ask patches [set plabel owner] ask households [set label who]] ;; label patches with their owner's ID
     
   ask households [
-    ifelse tracking [pen-down][pen-up]
-    set size 1.5 * count households-on patch-here
+    ifelse tracking [pen-down][pen-up] ;; track household moves
+    set size 1.5 * count households-on patch-here ;; make household icon size proportional to number of households in farmstead
     check-move ;; move to new location if energy falls below threshhold
     choose-land ;; pick patch to cultivate and farm it
-    reproduce ;; reproduce if enough surplus energy
-    check-death ;; die if energy drops to 0
-  ]
+    reproduce ;; household fisions if it has accumulated enough surplus energy
+    check-death ;; household dies if energy drops to 0
+    ]
 
   regrow-patch ;; regrow vegetation and optional restore fertility
   tick ;; mark time cycle
@@ -114,99 +127,107 @@ to check-move
   ; Reset the 'move threshhold' to be lower so that a household doesn't keep moving after it first moves.
   ; Over time, bring the 'move threshhold back up to its original value
   
-  ifelse energy < move-threshold [   
-    move
-  ][
-    if move-threshold < (init-energy * move-rate) and energy > move-threshold [set move-threshold move-threshold + 1]
-  ]
+  ifelse energy < move-threshold    
+    [move]
+    [if move-threshold < (init-energy * move-rate) and energy > move-threshold [set move-threshold move-threshold + 1]]
 end
 
 to move
   ;; procedure to move to a new farm and abandon the old one
+  ;; find a new fertile patch to move to it if unowned and not a farmstead
+  let fertility-lim min-fertility
+  if not adaptive [set move-dist (random 4) + 1] ;; some stochasticity in move distances even in controlled mode
+  ;; pick a new farmstead from a patch with sufficient fertility, within move distance, that is not owned by another household
+  let new-farm one-of patches in-radius ( (farm-dist * move-dist) + 1) with [fertility > fertility-lim and farmstead = 0 and owner = -1]  
+  if not is-patch? new-farm [ ;; no suitable patch to move to
+    stop
+  ]
   
-    ;; find a new fertile patch to move to that is unowned and is not a farmstead
-    let fertility-lim min-fertility
-    if not adaptive [set move-dist (random 4) + 1]
-    let new-farm one-of patches in-radius ( (farm-dist * move-dist) + 1) with [fertility > fertility-lim and farmstead = 0 and owner = -1]  
-    if not is-patch? new-farm [ ;; no patch to move to
-      stop
-    ]
-
+  ;; abandon old farmstead
   let hh-num who ; household ID
   let old-farm patch-here
-  ;; abandon old farmstead
   if count households-on patch-here = 0 [ ;; display previous farmstead as abandoned if no households left there
     ask patch-here [
-      set pcolor violet - 2
+      set pcolor violet - 2 ;; color of abandoned farmsteads
       set farmstead farmstead - 1
       if farmstead = 0 [
         set state "abandoned"
-        set site TRUE]
+        set site TRUE ;; abandoned farmstead is an archaeological site
+        ]
       ]
     
-    ask other patches with [owner = hh-num] [ ;; release previously owned patches when household moves but not when it fissions
+    ;; release previously owned patches when household moves but not when it fissions
+    ask other patches with [owner = hh-num] [ 
       set owner -1 
       set fallow 0
       set pcolor 62
       set state "unused"
-    ] 
-  ]
+      ]
+    ]
 
-  ;; move to new farmstead
-  move-to new-farm 
-  ask patch-here [ ;; establish a new farmstead and take ownership of land around it; build a farmstead but you can't farm here
+  ;; move to new farmstead and take ownership of land around it
+  move-to new-farm
+  
+  ;; establish new farmstead 
+  ask patch-here [
     set pcolor red 
     set farmstead farmstead + 1 
     set state "active"
     set fertility 0
     ] 
 
+  ;; claim ownership of unowned land around farmstead
   ask other patches in-radius farm-dist with [owner = -1] [
-    set owner hh-num ;; household takes ownership of unowned patches in area around farmstead  
+    set owner hh-num
     set pcolor 74 ;; initial color to see farming area
     set state "active"
     set fallow 0 
     ]
   
-  set energy energy - (init-energy * move-cost-rate) - ((distance old-farm) / 5) ; energy to move to new farm
+  set energy energy - (init-energy * move-cost-rate) - ((distance old-farm) / 5) ; energy cost to move to the new farm
   if energy <= move-threshold [
     set move-threshold move-threshold - ((init-energy * move-cost-rate) + 1) ; drop new moving threshold below current energy level
-  ]
+    ]
 end
 
 to choose-land
+  ;; select a patch of land to farm from owned or unclaimed fertile patches in farming radius
   let hh-num 0
   set hh-num who
-  ifelse any? other (patches in-radius farm-dist) with [fertility > 0 and (owner = hh-num or owner = -1)] [ ; check for owned or unclaimed fertile patches
-    ;; pick an owned patch to cultivate with the maximum potential net return
+  ifelse any? other (patches in-radius farm-dist) with [fertility > 0 and (owner = hh-num or owner = -1)] [ 
+    ;; pick a patch to cultivate with the maximum potential net return
     let farm-patch one-of (((
           (patches in-radius farm-dist) 
           with [owner = hh-num or owner = -1]) 
           with-max [(fertility * harvest-rate * init-energy) - (farm-rate * init-energy) - veg-clear-cost - ((distancexy pxcor pycor) / 5)]))
     
-    ask farm-patch [ ;; take posession of patch if not already owned
+    ;; take posession of patch if not already owned
+    ask farm-patch [ 
       set owner hh-num
-    ] 
+      ] 
     farm farm-patch ; cultivate the patch
-  ][
+    ][
     set energy energy - (0.1 * init-energy) ;; household continues to use energy even if it doesn't farm
-  ] 
+    ] 
 end
 
 to farm [farmfield]
+  ;; farm a patch and harvet returns
   let fval 1.0
   ask farmfield [
-    if vegetation > 0 [ set vegetation 0] ; clear any vegation on the land to farm
-    set fallow 0 ; mark field as cultivated
-    set field 1 ; mark field as cultivated
+    if vegetation > 0 [ set vegetation 0] ;; clear any vegation on the land to farm
+    set fallow 0 ;; mark field as cultivated
+    set field 1 ;; mark field as cultivated
     set pcolor 31
     set fval fertility
-    if fertility > 0 [set fertility (fertility - fertility-loss-rate)] ; reduce fertility by farming 
-    if fertility < 0 [set fertility 0] ; fertility can't drop below 0
-    set pcolor 39.9 - (8.9 * fertility) ; set color to match fertility
+    if fertility > 0 [set fertility (fertility - fertility-loss-rate)] ;; reduce fertility by farming 
+    if fertility < 0 [set fertility 0] ;; fertility can't drop below 0
+    set pcolor 39.9 - (8.9 * fertility) ;; set color to match fertility
     ] 
-  set net-return ((harvest-rate * init-energy) * fval / divisor) - (farm-rate * init-energy) - veg-clear-cost - ((distance farmfield) / 5) ; calculate harvest return 
-  set energy energy + net-return ; add return to household energy
+  
+  ;; calculate harvest return and add to household energy
+  set net-return ((harvest-rate * init-energy) * fval / divisor) - (farm-rate * init-energy) - veg-clear-cost - ((distance farmfield) / 5) 
+  set energy energy + net-return
 end
 
 to reproduce
@@ -223,13 +244,13 @@ to reproduce
       set energy (parent-energy / 2)
       if energy <= move-threshold [ ;; reset move threshold to be a little below current energy
         set move-threshold energy - (0.1 * energy)
-      ]
-      if adaptive and random 1000 <= innovation-rate [ ;; descendent innovates
+        ]
+      if adaptive and random 1000 <= innovation-rate [ ;; in adaptive mode, check whether daughter household innovates
         innovate
-      ]      
-      move
-    ]
-    set energy (energy / 2)
+        ]      
+      move ;; daughter household moves to new locality if possible
+      ]
+    set energy (energy / 2) ;; divide original parent energy between daughter and parent households
     if energy <= move-threshold [ ;; reset move threshold to be a little below current energy
       set move-threshold energy - (0.1 * energy)
     ]
@@ -237,68 +258,86 @@ to reproduce
 end
 
 to innovate
+  ;; daughter household can innovate and change one decision paremeter
+  
+  ;; mark innovating agent household by making it a varient shade of parent agent color
   let color-change 1 
   if random 2 = 0 [set color-change -1]
   set color color + color-change
+  
+  ;; pick a parameter to innovate
   let innovation one-of [1 2 3 4 5]
   if innovation = 1 [
-    set move-dist (random 4) ; recalculate jump distance
-  ]
+    set move-dist (random 4) ;; recalculate jump distance
+    ]
   if innovation = 2 [
-    set move-rate random-float 1 ; recalculate move threshhold
-  ]
+    set move-rate random-float 1 ;; recalculate move threshhold
+    ]
   if innovation = 3 [
-    set fission-rate random-float 1 ; recalculate fission energy
-  ]
+    set fission-rate random-float 1 ;; recalculate fission energy
+    ]
   if innovation = 4 [
-    set farm-dist (random 19) + 1  ; recalculate swidden radius
-  ]
+    set farm-dist (random 19) + 1  ;; recalculate swidden radius
+    ]
   if innovation = 5 [
-    set min-fertility random-float 1  ; recalculate minimum fertility acceptable for farming
-  ]
-; set n_patches (random 4) + 1   ; recalculate number of patches to farm
+    set min-fertility random-float 1  ;; recalculate minimum fertility acceptable for farming
+    ]
+; set n_patches (random 4) + 1   ;; recalculate number of patches to farm if household can farm more than one patch (currently turned off)
 end
   
 
 to check-death
+  ;; check to see if household agent dies
   let hh-num who
-  if energy <= 0 [ 
+  if energy <= 0 [
+    ;; household dies 
     ask patch-here [ ; show farmstead as one whose household died
       set farmstead farmstead - 1
       if farmstead = 0 [
         set pcolor magenta - 2
         set site TRUE
         set state "died"
+        ]
       ]
     ask other patches with [owner = hh-num] [ ;; release owned packages when household moves
       set owner -1
       set state "unused" 
       set pcolor 62
-    ] 
-    ]
+      ] 
    die
-  ]
+   ]
 end
 
 to regrow-patch
+  ;; vegetation succession after clearance, tracking fallowing, and soil restoration
   ask patches [
     set farmstead count households-here
+    
+    ;; restore soil fertility
     ifelse fertility < 1 
       [set fertility fertility + restore-rate] ; restore fertility
       [set fertility 1]; don't exceed max fertility
+      
+    ;; regrow vegetation in non-farmed non-farmstead fields
     if farmstead = 0 and not site and field = 0 [
       if vegetation < 50 [
-        set vegetation vegetation + 1 ; regrow vegetation in non-farmed non-farmstead fields
+        set vegetation vegetation + 1 
         set pcolor 69.9 - (vegetation * 7.9 / 50) ; set vegetation color according to vegetation type (forest is darker green)
       ]
     ]
     
-    if owner != -1 and field = 0 [set fallow fallow + 1] ; increment timer on fields uncultivated in current cycle for potential release
-
-    set field 0 ; re-initialize all fields as uncultivated for next cycle (all fields uncultivated after harvest)
+    ;; increment fallow timer on fields uncultivated in current cycle for potential release
+    if owner != -1 and field = 0 [set fallow fallow + 1] 
+    
+    ;; re-initialize all fields as uncultivated for next cycle (all fields uncultivated after harvest)
+    set field 0 
+    
+    ;; if land ownership can be tranferred, release field uncultivated for <max-fallow> years to be claimed by others
     if transfer-ownership [
-      if fallow > max-fallow and farmstead = 0 and not site [set owner -1] ; release field uncultivated for <max-fallow> years to be claimed by others
+      if fallow > max-fallow and farmstead = 0 and not site [set owner -1] 
     ]
+    
+    ;; reset the cost to clear the vegetation from the field
     if clearing-rate > 0 and vegetation > 0 [set veg-clear-cost (init-energy * clearing-rate / 100) * (vegetation / max_veg)]
   ]
 end
@@ -1176,7 +1215,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.0.4
+NetLogo 5.0.5
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
