@@ -107,6 +107,7 @@ to go
     [ ifelse show-info = "energy"
       [ask households [set label round energy] ask patches [set plabel ""]] ;; label households with their energy level
       [ask patches [set plabel owner] ask households [set label who]] ;; label patches with their owner's ID
+    ]
     
   ask households [
     ifelse tracking [pen-down][pen-up] ;; track household moves
@@ -1215,7 +1216,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.0.5
+NetLogo 5.1.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
