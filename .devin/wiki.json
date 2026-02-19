@@ -1,0 +1,84 @@
+{
+  "repo_notes": [
+    "This repository contains a NetLogo agent-based model (ABM) of swidden (slash-and-burn) agriculture. Documentation should follow the ODD (Overview, Design concepts, Details) protocol — the standard for describing individual-based and agent-based models (Grimm et al. 2020, JASSS 23(2):7). The formal ODD document is at docs/swidden_farming_v2_ODD.md.",
+    "The model has two entity types: (1) Household agents (NetLogo turtles) representing farming households, and (2) Patches representing land parcels with fertility, vegetation, and ownership state. Global variables control harvest rates, costs, fertility dynamics, and environmental stochasticity.",
+    "Six key adaptive variables drive emergent household strategies: farm-dist (farming radius), move-threshold (energy trigger for relocation), move-dist (relocation distance), fission-rate (reproduction threshold), min-fertility (minimum acceptable soil fertility), and innovation-rate (mutation rate during fission). In adaptive mode these vary per household and evolve through selection.",
+    "The main simulation loop in procedure 'go' (line 96) schedules processes in this order: (1) check-move/move — household relocation, (2) choose-land — field selection, (3) farm — resource extraction, (4) reproduce — household fission, (5) check-death — removal of depleted households, (6) regrow-patch — vegetation succession and fertility restoration. This scheduling order is critical to the ODD Process Overview.",
+    "Code-to-ODD mapping: 'setup'/'setup-patches'/'setup-households' → ODD Initialization; 'move'/'check-move' → Submodel: Household Movement; 'choose-land' → Submodel: Choosing Land to Farm; 'farm' → Submodel: Farm and Consume Resources; 'reproduce' → Submodel: Household Fissioning; 'innovate' → Submodel: Innovation of New Farming Strategies; 'check-death' → Submodel: Households Die; 'regrow-patch' → Submodel: Vegetation Succession and Fertility Restoration. Land tenure logic is embedded in regrow-patch.",
+    "The model runs in two modes: Controlled mode (user sets all parameter values) and Adaptive mode (key variables are randomized per household and evolve through innovation during fission). This distinction is fundamental to the model's purpose and should be documented prominently.",
+    "Design Concepts from the ODD: Emergence arises from the interaction of the six adaptive variables and land competition. Adaptation occurs through household relocation and evolutionary selection of strategies. Fitness is measured by energy accumulation. Households sense patch fertility, ownership, vegetation, and distance. Interaction is indirect (through land ownership). Stochasticity affects bad years, initial placement, innovation, and field choice. There are no collectives."
+  ],
+  "pages": [
+    {
+      "title": "Purpose and Patterns",
+      "purpose": "ODD Element 1. Describe the model's purpose: exploring dynamics of household-level swidden agriculture, the research questions it addresses, and the empirical patterns it aims to reproduce. Reference docs/swidden_farming_v2_ODD.md for the formal description. Explain both controlled and adaptive modes."
+    },
+    {
+      "title": "Entities, State Variables, and Scales",
+      "purpose": "ODD Element 2. Document all entity types (Household agents and Patches), their state variables, and the spatial/temporal scales. Cover agent variables (energy, move-threshold, fission-rate, farm-dist, min-fertility, move-dist, net-return) and patch variables (vegetation, fertility, farmstead, state, field, owner, fallow, veg-clear-cost, site). Document global variables and rate conversions. Reference code/swidden_farming_v2.nlogo setup procedures.",
+      "parent": "Purpose and Patterns"
+    },
+    {
+      "title": "Process Overview and Scheduling",
+      "purpose": "ODD Element 3. Describe the sequence of processes executed each tick in the 'go' procedure (line 96): check-move → move → choose-land → farm → reproduce → check-death → regrow-patch. Explain the scheduling order and state variable update timing. Reference code/swidden_farming_v2.nlogo.",
+      "parent": "Purpose and Patterns"
+    },
+    {
+      "title": "Design Concepts",
+      "purpose": "ODD Element 4. Cover all 11 standard ODD design concepts as they apply to this model: Emergence, Adaptation, Fitness/Objectives, Prediction, Sensing, Interaction, Stochasticity, Collectives, Observation, and Theoretical/Empirical Background. Each concept should be a subsection."
+    },
+    {
+      "title": "Emergence and Adaptation",
+      "purpose": "ODD Design Concepts: Emergence and Adaptation. Explain how the six adaptive variables (farm-dist, move-threshold, move-dist, fission-rate, min-fertility) interact to produce emergent strategies and settlement patterns. Describe how innovation during fission creates variation and selection pressure. Reference the 'reproduce' and 'innovate' procedures.",
+      "parent": "Design Concepts"
+    },
+    {
+      "title": "Sensing, Interaction, and Stochasticity",
+      "purpose": "ODD Design Concepts: Sensing, Interaction, Stochasticity, Collectives, Observation. Describe what household agents can sense (patch fertility, ownership, vegetation, distance), how indirect interaction works through land ownership, stochastic elements (bad-years, random placement, innovation), absence of collectives, and model outputs/observation methods.",
+      "parent": "Design Concepts"
+    },
+    {
+      "title": "Initialization",
+      "purpose": "ODD Element 5. Document the 'setup', 'setup-patches', and 'setup-households' procedures (lines 14-94). Explain initial conditions: random household placement, all patches start as forest (vegetation=50) with max fertility (1.0), households start with 100 energy units. Describe how adaptive mode randomizes the six key variables.",
+      "parent": "Implementation Details"
+    },
+    {
+      "title": "Implementation Details",
+      "purpose": "ODD Elements 5-7. Parent page for the Details section of the ODD protocol, covering Initialization, Input Data, and all Submodels. The model requires no external input data. All implementation is in code/swidden_farming_v2.nlogo."
+    },
+    {
+      "title": "Submodels",
+      "purpose": "ODD Element 7. Overview of all submodel procedures in the NetLogo code. Each submodel corresponds to a procedure: move/check-move, choose-land, farm, reproduce, innovate, check-death, regrow-patch. Link to child pages for detailed descriptions.",
+      "parent": "Implementation Details"
+    },
+    {
+      "title": "Household Movement and Land Choice",
+      "purpose": "ODD Submodels: Household Movement ('check-move' line 126, 'move' line 136) and Choosing Land to Farm ('choose-land' line 194). Describe the movement decision (energy < move-threshold), search radius calculation ((farm-dist x move-dist) + 1), patch selection criteria (fertility >= min-fertility, unowned, no farmstead), movement cost formula, and the land choice algorithm (maximize net-return within farm-dist).",
+      "parent": "Submodels"
+    },
+    {
+      "title": "Farming and Resource Consumption",
+      "purpose": "ODD Submodel: Farm and Consume Resources ('farm' procedure, line 215). Document the net-return calculation: ((harvest-rate x init-energy) x patch-fertility / divisor) - (farm-rate x init-energy) - veg-clear-cost - (distance/5). Explain fertility loss, vegetation clearing, bad-years divisor mechanism, and energy accounting.",
+      "parent": "Submodels"
+    },
+    {
+      "title": "Reproduction and Innovation",
+      "purpose": "ODD Submodels: Household Fissioning ('reproduce' line 234) and Innovation ('innovate' line 261). Describe fission trigger (energy > init-energy x fission-rate), energy splitting, daughter household placement, and the innovation mechanism where one of the six adaptive variables is randomly reassigned based on innovation-rate.",
+      "parent": "Submodels"
+    },
+    {
+      "title": "Vegetation Succession and Land Tenure",
+      "purpose": "ODD Submodels: Vegetation Succession/Fertility Restoration ('regrow-patch' line 312) and Land Tenure. Describe fertility restoration (restore-rate per tick, max 1.0), vegetation regrowth (+1 per tick to max 50), fallow tracking, veg-clear-cost recalculation, and the transfer-ownership/max-fallow land tenure mechanism.",
+      "parent": "Submodels"
+    },
+    {
+      "title": "Parameters and Configuration",
+      "purpose": "ODD Element 6 (Input Data) and parameter reference. Document all user-configurable parameters: init-households, harvest, farm-cost, tree-clearing-cost, move-cost, fertility-loss, fertility-restore, bad-years, max-fallow, innovation-rate, and the controlled/adaptive mode switch. Explain rate conversions (user 0-100 scale to internal 0-1). No external input data files are required.",
+      "parent": "Implementation Details"
+    },
+    {
+      "title": "Controlled vs Adaptive Mode",
+      "purpose": "Explain the two operational modes. Controlled mode: user sets all decision parameters, useful for sensitivity analysis. Adaptive mode: six key variables (farm-dist, move-threshold, move-dist, fission-rate, min-fertility) are randomized per household and evolve through innovation during fission, enabling evolutionary exploration of farming strategies."
+    }
+  ]
+}
